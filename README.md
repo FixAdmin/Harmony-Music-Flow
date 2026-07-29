@@ -1,22 +1,21 @@
 # Harmony Music Flow
 
-A community-maintained fork of [Bikram-Kumar/Harmony-Music](https://github.com/Bikram-Kumar/Harmony-Music), which continues the original [anandnet/Harmony-Music](https://github.com/anandnet/Harmony-Music) project.
+A fork of [Bikram-Kumar/Harmony-Music](https://github.com/Bikram-Kumar/Harmony-Music), which continues the original [anandnet/Harmony-Music](https://github.com/anandnet/Harmony-Music) project.
 
-Harmony Music is a Flutter music client for Android, Windows, and Linux. This fork adds a local-first recommendation system and **Harmony Flow**, an adaptive queue that mixes library tracks with related discoveries.
+Harmony Music is a Flutter music client for Android, Windows, and Linux. This fork adds personalized recommendations and **Harmony Flow**, a continuous queue that mixes your library with new music.
 
-> This fork is unofficial and is not affiliated with or endorsed by the upstream maintainers, YouTube, YouTube Music, Last.fm, or any content provider. Recommendation behavior may change as playback data is evaluated.
+> This fork is unofficial and is not affiliated with or endorsed by the upstream maintainers, YouTube, YouTube Music, Last.fm, or any content provider.
 
 ![Harmony Music cover](cover.png)
 
-## What This Fork Adds
+## Harmony Flow
 
-- **Harmony Flow**: a continuously replenished smart queue that starts playing immediately.
-- **Adaptive stations**: generated directions based on the current taste profile instead of a fixed genre list.
-- **Local taste profile**: learns from plays, completion, likes, early skips, recency, and repeated artists.
-- **Mixed candidate sources**: YouTube Music radio and related tracks, the local library, downloads, favorites, and an optional Last.fm fallback.
-- **Flow feedback**: dislike tracks, blacklist tracks or artists, and remove blacklist entries in Settings.
-- **Playback audit**: inspect up to 500 recently played tracks with library/source markers.
-- **Library automation**: liked Flow tracks can be added to the library and downloaded when the existing download support is available.
+- Start Flow to keep music playing with a mix of familiar tracks and related discoveries.
+- Choose from generated stations when you want a narrower direction.
+- Recommendations adapt to listening history, likes, completed tracks, and skips.
+- Like, dislike, or block a track or artist directly from the player.
+- Save liked Flow tracks to the library and optionally download them.
+- Review the last 500 played tracks and see which ones came from the library.
 
 See [Harmony Flow architecture](docs/HARMONY_FLOW.md) for the current behavior and design limits.
 
@@ -65,15 +64,15 @@ No Last.fm key is required. When configured in Settings, a Last.fm API key is st
 
 ## Project Status
 
-This repository currently publishes source code only. GitHub Actions can create an **unsigned** portable Windows artifact for testing. No official binaries, signing identity, support channel, or release schedule are promised yet.
+This repository currently publishes source code only. The manual Windows workflow creates an unsigned portable build for testing.
 
 ## Privacy
 
-Harmony Flow stores listening events, taste data, queue decisions, blacklist entries, and recommendation caches locally in Hive. It does not add an account system or cloud synchronization. Network requests still occur for music metadata, streams, artwork, lyrics, and optional Last.fm recommendations.
+Listening history used by Flow, blocked tracks, and recommendation data stay on the device. Flow does not require an account or a separate recommendation server. The app still contacts music providers for metadata, streams, artwork, lyrics, and optional Last.fm recommendations.
 
 ## Contributing
 
-Read [CONTRIBUTING.md](CONTRIBUTING.md) before opening a pull request. Changes should preserve upstream attribution, local-first behavior, and focused tests for recommendation or queue logic.
+Read [CONTRIBUTING.md](CONTRIBUTING.md) before opening a pull request. Changes should preserve upstream attribution and include focused tests for recommendation or queue logic.
 
 ## License And Upstream Terms
 

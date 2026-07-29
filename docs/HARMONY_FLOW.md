@@ -16,11 +16,11 @@ Harmony Flow is a local-first adaptive queue layered on top of Harmony Music's e
 
 The default Flow uses the broad taste profile. Generated stations use current profile clusters and available candidate metadata to express narrower directions. They are not a hardcoded global genre catalog: the visible set can change as the profile and available recommendations change.
 
-Changing a station starts its queue immediately. Station context affects candidate collection and ranking, while the same playback safeguards and feedback system remain active.
+Changing a station immediately replaces the upcoming queue. Likes, dislikes, and blocking work the same way in every station.
 
 ## Feedback
 
-- A like strengthens track and artist affinity and can trigger the existing library/download automation.
+- A like strengthens track and artist affinity. When enabled, the track is also saved to the library and downloaded.
 - An early skip contributes a negative signal only after playback is valid; stream failures and very short startup attempts are filtered.
 - Dislike/blacklist actions immediately exclude matching tracks, and artist blocks exclude that artist from future Flow queues.
 - Recently played tracks and repeated artists receive penalties to reduce loops.
@@ -41,5 +41,4 @@ Hive boxes store listening events, taste profiles, recommendation caches, Flow s
 - No collaborative filtering across users is performed.
 - Generated stations can converge when candidate pools are small or metadata is sparse.
 - Last.fm improves discovery breadth but requires a user-supplied API key.
-- Mobile/desktop library synchronization is not implemented in the current public scope.
-
+- Mobile/desktop library synchronization is not implemented.

@@ -22,10 +22,6 @@ For player or queue changes, also run the app and verify first playback, next/pr
 
 Explain which signal or candidate source changed and how the change avoids repetition, feedback loops, and overfitting to recent playback. Deterministic unit tests are expected for scoring and queue policy changes.
 
-## Translations
-
-Do not force the application locale. Existing language selection must continue to work, and missing custom translations must fall back to English.
-
 ## Legal And Content Boundaries
 
 Do not add bundled copyrighted media, credentials, provider circumvention instructions, or branding that implies endorsement by an upstream maintainer or content provider. Contributions remain subject to the repository license and preserved upstream conditions.
