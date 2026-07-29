@@ -18,6 +18,14 @@ class MediaItemBuilder {
       }
     }
 
+    final thumbnails = json['thumbnails'];
+    final thumbnailUrl = thumbnails is List &&
+            thumbnails.isNotEmpty &&
+            thumbnails[0] is Map &&
+            (thumbnails[0]['url'] as String?)?.isNotEmpty == true
+        ? thumbnails[0]['url'] as String
+        : 'https://raw.githubusercontent.com/anandnet/Harmony-Music/refs/heads/main/playlist_placeholder.png';
+
     return MediaItem(
         id: json["videoId"],
         title: json["title"],
@@ -26,7 +34,7 @@ class MediaItemBuilder {
             : toDuration(json['length']),
         album: album != null ? album['name'] : null,
         artist: artistName,
-        artUri: Uri.parse(Thumbnail(json["thumbnails"][0]['url']).high),
+        artUri: Uri.parse(Thumbnail(thumbnailUrl).high),
         extras: {
           'url': json['url'] ?? url,
           'length': json['length'],

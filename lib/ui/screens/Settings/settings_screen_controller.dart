@@ -9,7 +9,11 @@ import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 import '../../../utils/update_check_flag_file.dart';
+import '../../../models/flow/blacklist_entry.dart';
 import '/services/piped_service.dart';
+import '/services/flow/flow_service.dart';
+import '/services/library/blacklist_service.dart';
+import '/services/recommendation/recommendation_service.dart';
 import '../Library/library_controller.dart';
 import '../../widgets/snackbar.dart';
 import '../../../utils/helper.dart';
@@ -47,6 +51,12 @@ class SettingsScreenController extends GetxController {
   final keepScreenAwake = false.obs;
   final restorePlaybackSession = false.obs;
   final cacheHomeScreenData = true.obs;
+  final recommendationsEnabled = true.obs;
+  final lastFmApiKey = "".obs;
+  final recommendationsRefreshInProgress = false.obs;
+  final recommendationClearInProgress = false.obs;
+  final flowEnabled = true.obs;
+  final flowClearInProgress = false.obs;
   final currentVersion = "V1.12.2";
 
   @override
@@ -100,6 +110,9 @@ class SettingsScreenController extends GetxController {
     restorePlaybackSession.value =
         setBox.get("restrorePlaybackSession") ?? false;
     cacheHomeScreenData.value = setBox.get("cacheHomeScreenData") ?? true;
+    recommendationsEnabled.value = setBox.get("recommendationsEnabled") ?? true;
+    lastFmApiKey.value = setBox.get("lastFmApiKey") ?? "";
+    flowEnabled.value = setBox.get("flowEnabled") ?? true;
     streamingQuality.value =
         AudioQuality.values[setBox.get('streamingQuality')];
     playerUi.value = isDesktop ? 0 : (setBox.get('playerUi') ?? 0);
@@ -287,6 +300,82 @@ class SettingsScreenController extends GetxController {
     }
   }
 
+  Future<void> toggleRecommendations(bool val) async {
+    await setBox.put("recommendationsEnabled", val);
+    recommendationsEnabled.value = val;
+    if (val) {
+      Get.find<RecommendationService>().refreshForYou(force: true);
+    }
+  }
+
+  Future<void> setLastFmApiKey(String value) async {
+    final sanitized = value.trim();
+    await setBox.put("lastFmApiKey", sanitized);
+    lastFmApiKey.value = sanitized;
+    await Get.find<RecommendationService>().refreshForYou(force: true);
+    await Get.find<HomeScreenController>().refreshFlowStations();
+  }
+
+  Future<void> refreshRecommendations() async {
+    if (recommendationsRefreshInProgress.isTrue) return;
+    recommendationsRefreshInProgress.value = true;
+    try {
+      await Get.find<RecommendationService>().refreshForYou(force: true);
+    } finally {
+      recommendationsRefreshInProgress.value = false;
+    }
+  }
+
+  Future<void> clearRecommendationData() async {
+    if (recommendationClearInProgress.isTrue) return;
+    recommendationClearInProgress.value = true;
+    try {
+      await Get.find<RecommendationService>().clearRecommendationData();
+    } finally {
+      recommendationClearInProgress.value = false;
+    }
+  }
+
+  Future<void> toggleFlow(bool val) async {
+    await setBox.put("flowEnabled", val);
+    flowEnabled.value = val;
+    if (!val) {
+      await Get.find<PlayerController>().stopFlow();
+    }
+  }
+
+  Future<void> clearFlowData() async {
+    if (flowClearInProgress.isTrue) return;
+    flowClearInProgress.value = true;
+    try {
+      await Get.find<PlayerController>().stopFlow();
+      await Get.find<FlowService>().clearFlowData();
+    } finally {
+      flowClearInProgress.value = false;
+    }
+  }
+
+  List<BlacklistEntry> get activeFlowTrackBlacklist =>
+      Get.find<BlacklistService>().activeTrackEntries();
+
+  List<BlacklistEntry> get activeFlowArtistBlacklist =>
+      Get.find<BlacklistService>().activeArtistEntries();
+
+  Future<void> unblockFlowTrack(String key) async {
+    await Get.find<BlacklistService>().unblockTrack(key);
+    await Get.find<RecommendationService>().refreshForYou(force: true);
+  }
+
+  Future<void> unblockFlowArtist(String key) async {
+    await Get.find<BlacklistService>().unblockArtist(key);
+    await Get.find<RecommendationService>().refreshForYou(force: true);
+  }
+
+  Future<void> clearFlowBlacklist() async {
+    await Get.find<BlacklistService>().clear();
+    await Get.find<RecommendationService>().refreshForYou(force: true);
+  }
+
   void toggleAutoDownloadFavoriteSong(bool val) {
     setBox.put("autoDownloadFavoriteSongEnabled", val);
     autoDownloadFavoriteSongEnabled.value = val;
@@ -301,16 +390,15 @@ class SettingsScreenController extends GetxController {
     setBox.put('keepScreenAwake', val);
     keepScreenAwake.value = val;
     try {
-        if (val) {
-          // enable wakelock immediately if music is playing
-          if (Get.find<PlayerController>().buttonState.value ==
-              PlayButtonState.playing) {
-            WakelockPlus.enable();
-          }
-        } else {
-          WakelockPlus.disable();
+      if (val) {
+        // enable wakelock immediately if music is playing
+        if (Get.find<PlayerController>().buttonState.value ==
+            PlayButtonState.playing) {
+          WakelockPlus.enable();
         }
-     
+      } else {
+        WakelockPlus.disable();
+      }
     } catch (e) {
       // ignore if player/controller not available
     }

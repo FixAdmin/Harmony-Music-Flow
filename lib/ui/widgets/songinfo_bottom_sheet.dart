@@ -1,14 +1,13 @@
 import 'package:audio_service/audio_service.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:hive/hive.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 import 'package:ionicons/ionicons.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import '../../services/downloader.dart';
+import '../../services/library/library_automation_service.dart';
 import '../screens/Playlist/playlist_screen_controller.dart';
-import '../screens/Settings/settings_screen_controller.dart';
 import '/utils/helper.dart';
 import '/services/piped_service.dart';
 import '/ui/widgets/sleep_timer_bottom_sheet.dart';
@@ -16,9 +15,10 @@ import '/ui/player/player_controller.dart';
 import '../screens/Library/library_controller.dart';
 import '/ui/widgets/add_to_playlist.dart';
 import '/ui/widgets/snackbar.dart';
-import '../../models/media_Item_builder.dart';
 import '../../models/playlist.dart';
+import '../player/components/flow_button.dart';
 import '../navigator.dart';
+import 'flow_song_actions.dart';
 import 'song_download_btn.dart';
 import 'image_widget.dart';
 import 'song_info_dialog.dart';
@@ -105,6 +105,42 @@ class SongInfoBottomSheet extends StatelessWidget {
               onTap: () {
                 Navigator.of(context).pop();
                 playerController.startRadio(song);
+              },
+            ),
+            ValueListenableBuilder<Box>(
+              valueListenable:
+                  Hive.box('AppPrefs').listenable(keys: const ['flowEnabled']),
+              builder: (context, appPrefs, _) {
+                if (!(appPrefs.get('flowEnabled') ?? true)) {
+                  return const SizedBox.shrink();
+                }
+                return Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    ListTile(
+                      visualDensity: const VisualDensity(vertical: -1),
+                      leading: const Icon(Icons.auto_awesome),
+                      title: const Text("Start Harmony Flow"),
+                      onTap: () {
+                        if (!(appPrefs.get('flowEnabled') ?? true)) return;
+                        Navigator.of(context).pop();
+                        playerController.startFlow(seed: song);
+                      },
+                    ),
+                    ListTile(
+                      visualDensity: const VisualDensity(vertical: -1),
+                      leading: const Icon(Icons.tune),
+                      title: const Text("Tune Flow"),
+                      onTap: () {
+                        if (!(appPrefs.get('flowEnabled') ?? true)) return;
+                        Navigator.of(context).pop();
+                        FlowButton.showTuner(playerController
+                            .homeScaffoldkey.currentState!.context);
+                      },
+                    ),
+                    FlowSongActions(song: song),
+                  ],
+                );
               },
             ),
             (calledFromPlayer || calledFromQueue)
@@ -383,17 +419,13 @@ class SongInfoController extends GetxController
         return;
       }
     }
-    final box = await Hive.openBox("LIBFAV");
-    isCurrentSongFav.isFalse
-        ? box.put(song.id, MediaItemBuilder.toJson(song))
-        : box.delete(song.id);
-    isCurrentSongFav.value = !isCurrentSongFav.value;
-    if (Get.find<SettingsScreenController>()
-            .autoDownloadFavoriteSongEnabled
-            .isTrue &&
-        isCurrentSongFav.isTrue) {
-      Get.find<Downloader>().download(song);
+    if (isCurrentSongFav.isFalse) {
+      final result = await Get.find<LibraryAutomationService>().likeTrack(song);
+      if (!result.success) return;
+    } else {
+      await Get.find<LibraryAutomationService>().unlikeTrack(song);
     }
+    isCurrentSongFav.value = !isCurrentSongFav.value;
   }
 }
 

@@ -9,10 +9,25 @@ import 'package:terminate_restart/terminate_restart.dart';
 import '/ui/screens/Search/search_screen_controller.dart';
 import '/utils/get_localization.dart';
 import '/services/downloader.dart';
+import '/services/flow/flow_candidate_mixer.dart';
+import '/services/flow/flow_debug_logger.dart';
+import '/services/flow/flow_feedback_policy.dart';
+import '/services/flow/flow_queue_planner.dart';
+import '/services/flow/flow_service.dart';
+import '/services/flow/flow_station_service.dart';
+import '/services/flow/flow_tuner.dart';
+import '/services/library/blacklist_service.dart';
+import '/services/library/library_automation_service.dart';
 import '/services/piped_service.dart';
+import '/services/recommendation/candidate_provider.dart';
+import '/services/recommendation/feedback_tracker.dart';
+import '/services/recommendation/lastfm_provider.dart';
+import '/services/recommendation/recommendation_service.dart';
+import '/services/recommendation/taste_profile_service.dart';
 import 'utils/app_link_controller.dart';
 import '/services/audio_handler.dart';
 import '/services/music_service.dart';
+import '/services/playback_audit_log_service.dart';
 import '/ui/home.dart';
 import '/ui/player/player_controller.dart';
 import 'ui/screens/Settings/settings_screen_controller.dart';
@@ -84,6 +99,21 @@ class MyApp extends StatelessWidget {
 Future<void> startApplicationServices() async {
   Get.lazyPut(() => PipedServices(), fenix: true);
   Get.lazyPut(() => MusicServices(), fenix: true);
+  Get.lazyPut(() => PlaybackAuditLogService(), fenix: true);
+  Get.lazyPut(() => FeedbackTracker(), fenix: true);
+  Get.lazyPut(() => TasteProfileService(), fenix: true);
+  Get.lazyPut(() => LastFmProvider(), fenix: true);
+  Get.lazyPut(() => CandidateProvider(), fenix: true);
+  Get.lazyPut(() => RecommendationService(), fenix: true);
+  Get.lazyPut(() => FlowTuner(), fenix: true);
+  Get.lazyPut(() => FlowCandidateMixer(), fenix: true);
+  Get.lazyPut(() => FlowQueuePlanner(), fenix: true);
+  Get.lazyPut(() => FlowFeedbackPolicy(), fenix: true);
+  Get.lazyPut(() => FlowDebugLogger(), fenix: true);
+  Get.lazyPut(() => FlowStationService(), fenix: true);
+  Get.lazyPut(() => BlacklistService(), fenix: true);
+  Get.lazyPut(() => LibraryAutomationService(), fenix: true);
+  Get.lazyPut(() => FlowService(), fenix: true);
   Get.lazyPut(() => ThemeController(), fenix: true);
   Get.lazyPut(() => PlayerController(), fenix: true);
   Get.lazyPut(() => HomeScreenController(), fenix: true);
@@ -113,6 +143,22 @@ initHive() async {
   await Hive.openBox("SongDownloads");
   await Hive.openBox('SongsUrlCache');
   await Hive.openBox("AppPrefs");
+  await Hive.openBox("ListeningEvents");
+  await Hive.openBox("PlaybackAuditLog");
+  await Hive.openBox("TasteProfile");
+  await Hive.openBox("RecommendationCache");
+  await Hive.openBox("RecommendationSettings");
+  await Hive.openBox("FlowSessions");
+  await Hive.openBox("FlowQueueState");
+  await Hive.openBox("FlowTunerPresets");
+  await Hive.openBox("FlowStats");
+  await Hive.openBox("FlowDebugLog");
+  await Hive.openBox("TrackBlacklist");
+  await Hive.openBox("ArtistBlacklist");
+  await Hive.openBox("LibraryAutomationSettings");
+  await Hive.openBox("SyncDevices");
+  await Hive.openBox("SyncManifest");
+  await Hive.openBox("SyncChangeLog");
 }
 
 void _setAppInitPrefs() {
@@ -126,7 +172,11 @@ void _setAppInitPrefs() {
       'themePrimaryColor': 4278199603,
       'discoverContentType': "QP",
       'newVersionVisibility': updateCheckFlag,
-      "cacheHomeScreenData": true
+      "cacheHomeScreenData": true,
+      "recommendationsEnabled": true,
+      "lastFmApiKey": "",
+      "flowEnabled": true,
+      "showFlowDebugEnabled": false
     });
   }
 }

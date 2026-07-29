@@ -1,6 +1,5 @@
 import 'dart:ui';
 
-
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -8,6 +7,7 @@ import '../../widgets/songinfo_bottom_sheet.dart';
 import '../player_controller.dart';
 import 'albumart_lyrics.dart';
 import 'backgroud_image.dart';
+import 'flow_button.dart';
 import 'lyrics_switch.dart';
 import 'player_control.dart';
 
@@ -206,6 +206,8 @@ class StandardPlayer extends StatelessWidget {
                     ),
                   ),
                 ),
+
+                const FlowButton(),
 
                 /// More button for current song context
                 IconButton(

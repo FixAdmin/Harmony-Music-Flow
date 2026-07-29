@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import 'package:hive/hive.dart';
 
 import '/models/media_Item_builder.dart';
+import '/models/flow/flow_station.dart';
 import '/ui/player/player_controller.dart';
 import '../../../utils/update_check_flag_file.dart';
 import '../../../utils/helper.dart';
@@ -11,18 +12,25 @@ import '/models/album.dart';
 import '/models/playlist.dart';
 import '/models/quick_picks.dart';
 import '/services/music_service.dart';
+import '/services/flow/flow_station_service.dart';
+import '/services/recommendation/recommendation_service.dart';
 import '../Settings/settings_screen_controller.dart';
 import '/ui/widgets/new_version_dialog.dart';
 
 class HomeScreenController extends GetxController {
   final MusicServices _musicServices = Get.find<MusicServices>();
+  final RecommendationService _recommendationService =
+      Get.find<RecommendationService>();
+  final FlowStationService _flowStationService = Get.find<FlowStationService>();
   final isContentFetched = false.obs;
   final tabIndex = 0.obs;
   final networkError = false.obs;
   final quickPicks = QuickPicks([]).obs;
+  RxList<FlowStation> get flowStations => _flowStationService.stations;
   final middleContent = [].obs;
   final fixedContent = [].obs;
   final showVersionDialog = true.obs;
+  final forYouScrollController = ScrollController();
   //isHomeScreenOnTop var only useful if bottom nav enabled
   final isHomeSreenOnTop = true.obs;
   final List<ScrollController> contentScrollControllers = [];
@@ -55,6 +63,8 @@ class HomeScreenController extends GetxController {
     } else {
       loadContentFromNetwork();
     }
+    _refreshRecommendationsInBackground();
+    _refreshFlowStationsInBackground();
   }
 
   Future<bool> loadContentFromDb() async {
@@ -169,6 +179,8 @@ class HomeScreenController extends GetxController {
       cachedHomeScreenData(updateAll: true);
       await Hive.box("AppPrefs")
           .put("homeScreenDataTime", DateTime.now().millisecondsSinceEpoch);
+      _refreshRecommendationsInBackground();
+      _refreshFlowStationsInBackground();
       // ignore: unused_catch_stack
     } on NetworkError catch (r, e) {
       printERROR("Home Content not loaded due to ${r.message}");
@@ -177,12 +189,32 @@ class HomeScreenController extends GetxController {
     }
   }
 
+  void _refreshRecommendationsInBackground({bool force = false}) {
+    Future.delayed(Duration.zero, () {
+      _recommendationService.refreshForYou(force: force);
+    });
+  }
+
+  Future<void> refreshRecommendations({bool force = true}) {
+    return _recommendationService.refreshForYou(force: force);
+  }
+
+  void _refreshFlowStationsInBackground() {
+    Future.delayed(Duration.zero, () async {
+      await refreshFlowStations();
+    });
+  }
+
+  Future<void> refreshFlowStations() async {
+    await _flowStationService.refreshStations();
+  }
+
   List _setContentList(
     List<dynamic> contents,
   ) {
     List contentTemp = [];
     for (var content in contents) {
-      if((content["contents"]).isEmpty) continue;
+      if ((content["contents"]).isEmpty) continue;
       if ((content["contents"][0]).runtimeType == Playlist) {
         final tmp = PlaylistContent(
             playlistList: (content["contents"]).whereType<Playlist>().toList(),
@@ -373,6 +405,7 @@ class HomeScreenController extends GetxController {
   @override
   void dispose() {
     disposeDetachedScrollControllers(disposeAll: true);
+    forYouScrollController.dispose();
     super.dispose();
   }
 }

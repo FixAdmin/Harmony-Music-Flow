@@ -66,6 +66,21 @@ app.*.map.json
 
 settings.json
 
+# Local analysis, credentials, and packaging output
+.codegraph/
+.env
+.env.*
+!.env.example
+*.db
+*.db-shm
+*.db-wal
+*.key
+*.p12
+*.pfx
+/signed/
+/docs/plans/
+/docs/superpowers/
+
 android/app/.cxx/Debug/*
 
 /android/app/.cxx

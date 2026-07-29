@@ -1,94 +1,100 @@
-<div align="center">
+# Harmony Music Flow
 
-## This is a continuation of Harmony Music by [anandnet](https://github.com/anandnet/Harmony-Music/). I will try to keep the app working as long as I can.
+An experimental, community-maintained fork of [Bikram-Kumar/Harmony-Music](https://github.com/Bikram-Kumar/Harmony-Music), which continues the original [anandnet/Harmony-Music](https://github.com/anandnet/Harmony-Music) project.
 
-</div>
+Harmony Music is a Flutter music client for Android, Windows, and Linux. This fork adds a local-first recommendation system and **Harmony Flow**, an adaptive queue that mixes library tracks with related discoveries.
 
-<img src="https://github.com/Bikram-Kumar/Harmony-Music/blob/main/cover.png" width="1200" >
+> This fork is unofficial and is not affiliated with or endorsed by the upstream maintainers, YouTube, YouTube Music, Last.fm, or any content provider. The recommendation features are experimental and may change as playback data is evaluated.
 
-# Harmony Music
-A cross platform app for music streaming made with Flutter(Android, Windows, linux).
+![Harmony Music cover](cover.png)
 
-# Download
+## What This Fork Adds
 
-<a href="https://github.com/Bikram-Kumar/Harmony-Music/releases/latest"><img src ="https://github.com/Bikram-Kumar/Harmony-Music/blob/main/don_github.png" width = "250"></a> 
+- **Harmony Flow**: a continuously replenished smart queue that starts playing immediately.
+- **Adaptive stations**: generated directions based on the current taste profile instead of a fixed genre list.
+- **Local taste profile**: learns from plays, completion, likes, early skips, recency, and repeated artists.
+- **Mixed candidate sources**: YouTube Music radio and related tracks, the local library, downloads, favorites, and an optional Last.fm fallback.
+- **Flow feedback**: dislike tracks, blacklist tracks or artists, and remove blacklist entries in Settings.
+- **Playback audit**: inspect up to 500 recently played tracks with library/source markers.
+- **Library automation**: liked Flow tracks can be added to the library and downloaded when the existing download support is available.
+- **English fallback**: existing language selection is preserved; custom strings without a translation remain in English.
 
-## Please use the [Discussions page](https://github.com/Bikram-Kumar/Harmony-Music/discussions) for any help or discussions with other members in the community.
+See [Harmony Flow architecture](docs/HARMONY_FLOW.md) for the current behavior and design limits.
 
+## Existing Harmony Music Features
 
-# Features
-* Ability to play song from Ytube/Ytube Music.
-* Song cache while playing
-* Radio feature support
-* Background music
-* Playlist creation & bookmark support
-* Artist & Album bookmark support
-* Import song,Playlist,Album,Artist via sharing from Ytube/Ytube Music.
-* Streaming quality control
-* Song downloading support
-* Language support
-* Skip silence
-* Dynamic Theme
-* Flexibility to switch between Bottom & Side Nav bar
-* Equalizer support
-* Android Auto support
-* Synced & Plain Lyrics support
-* Sleep Timer
-* No Advertisment
-* No Login required
-* Piped playlist integration
+- YouTube and YouTube Music playback without an account
+- Queue, radio, playlists, favorites, albums, and artists
+- Playback cache and song downloads
+- Streaming quality controls and silence skipping
+- Synced and plain lyrics
+- Android Auto, sleep timer, and equalizer support
+- Android, Windows, and Linux targets
+- Piped playlist integration
 
-# Translation
-<a href="https://hosted.weblate.org/engage/harmony-music/">
-<img src="https://hosted.weblate.org/widget/harmony-music/project-translations/multi-auto.svg" alt="Translation status" />
-</a>
+## Development
 
-You can also help us in translation, click status image or <a href="https://hosted.weblate.org/projects/harmony-music/project-translations/"> here </a> to go to Weblate.
+### Requirements
 
-# Troubleshoot
-* if you are facing Notification control issue or music playback stopped by system optimization, please enable ignore battery optimization option from settings
+- Flutter 3.24.2 or a compatible stable Flutter release
+- Dart SDK supplied by Flutter
+- Visual Studio with **Desktop development with C++** for Windows builds
+- Android Studio and an Android SDK for Android builds
 
-# License
-```
-Harmony Music is a free software licensed under GPL v3.0 with following condition.
+### Run Locally
 
-- Copied/Modified version of this software can not be used for 'non-free' and profit purposes.
-- You can not publish copied/modified version of this app on closed source app repository
-  like PlayStore/AppStore.
-
+```bash
+flutter pub get
+flutter analyze
+flutter test
+flutter run -d windows
 ```
 
+Build a Windows release:
 
-# Disclaimer
-```
-This project has been created while learning & learning is the main intention.
-This project is not sponsored or affiliated with, funded, authorized, endorsed by any content provider.
-Any Song, content, trademark used in this app are intellectual property of their respective owners.
-Harmony music is not responsible for any infringement of copyright or other intellectual property rights that may result
-from the use of the songs and other content available through this app.
-
-This Software is released "as-is", without any warranty, responsibility or liability.
-In no event shall the Author of this Software be liable for any special, consequential,
-incidental or indirect damages whatsoever (including, without limitation, any 
-other pecuniary loss) arising out of the use of inability to use this product, even if
-Author of this Sotware is aware of the possibility of such damages and known defect.
+```bash
+flutter build windows --release
 ```
 
-# Learning References & Credits
-<a href = 'https://docs.flutter.dev/'>Flutter documentation</a> - a best guide to learn cross platform Ui/app developemnt<br/>
-<a href = 'https://suragch.medium.com/'>Suragch</a>'s Article related to Just audio & state management,architectural style<br/>
-<a href = 'https://github.com/sigma67'>sigma67</a>'s unofficial ytmusic api project<br/>
-App UI inspired by <a href = 'https://github.com/vfsfitvnm'>vfsfitvnm</a>'s ViMusic<br/>
-Synced lyrics provided by <a href = 'https://lrclib.net' >LRCLIB</a> <br/>
-<a href = 'https://piped.video' >Piped</a> for playlists.
+Build an Android APK:
 
-#### Major Packages used
-* just_audio: ^0.9.40  -  audio player for android
-* media_kit: ^1.1.9 - audio player for linux and windows
-* audio_service: ^0.18.15 - manage background music & platform audio services
-* get: ^4.6.6 -  package for high-performance state management, intelligent dependency injection, and route management
-* youtube_explode_dart: ^2.0.2 - Third party package to provide song url
-* hive: ^2.2.3 - offline db used 
-* hive_flutter: ^1.1.0
+```bash
+flutter build apk --release
+```
 
+No Last.fm key is required. When configured in Settings, a Last.fm API key is stored locally and is used only to discover similar artist/title pairs; playback still resolves through the app's existing music provider.
+
+## Project Status
+
+This repository currently publishes source code only. GitHub Actions can create an **unsigned** portable Windows artifact for testing. No official binaries, signing identity, support channel, or release schedule are promised yet.
+
+## Privacy
+
+Harmony Flow stores listening events, taste data, queue decisions, blacklist entries, and recommendation caches locally in Hive. It does not add an account system or cloud synchronization. Network requests still occur for music metadata, streams, artwork, lyrics, and optional Last.fm recommendations.
+
+## Contributing
+
+Read [CONTRIBUTING.md](CONTRIBUTING.md) before opening a pull request. Changes should preserve upstream attribution, local-first behavior, and focused tests for recommendation or queue logic.
+
+## License And Upstream Terms
+
+This fork preserves the upstream history and [GPL-3.0 license](LICENSE). The upstream README also states these additional conditions:
+
+- Copied or modified versions cannot be used for non-free or profit purposes.
+- Copied or modified versions cannot be published to closed-source app repositories such as Play Store or App Store.
+
+Those additional statements may not be standard GPL terms. This repository preserves them as upstream project conditions and does not provide legal advice. Review the complete license and upstream project terms before redistribution.
+
+## Disclaimer
+
+This software is provided as-is, without warranty. It is not sponsored, funded, authorized, or endorsed by any content provider. Songs, artwork, names, and trademarks belong to their respective owners. Users and distributors are responsible for complying with provider terms, copyright law, and local law.
+
+## Credits
+
+- [Bikram-Kumar/Harmony-Music](https://github.com/Bikram-Kumar/Harmony-Music)
+- [anandnet/Harmony-Music](https://github.com/anandnet/Harmony-Music)
+- [Flutter](https://docs.flutter.dev/)
+- [ytmusicapi](https://github.com/sigma67/ytmusicapi) as an upstream learning reference
+- [LRCLIB](https://lrclib.net/) for lyrics
+- [Piped](https://piped.video/) for playlist integration
 

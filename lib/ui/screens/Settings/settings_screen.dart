@@ -12,11 +12,50 @@ import '../../widgets/restore_dialog.dart';
 import '../Library/library_controller.dart';
 import '../../widgets/snackbar.dart';
 import '/ui/widgets/link_piped.dart';
+import '/ui/widgets/modified_text_field.dart';
 import '/services/music_service.dart';
 import '/ui/player/player_controller.dart';
 import '/ui/utils/theme_controller.dart';
 import 'components/custom_expansion_tile.dart';
+import 'components/flow_blacklist_management_sheet.dart';
+import 'components/flow_debug_log_sheet.dart';
+import 'components/playback_audit_log_sheet.dart';
 import 'settings_screen_controller.dart';
+
+Future<bool> _confirmDestructiveAction(
+  BuildContext context, {
+  required String title,
+  required String message,
+}) async {
+  return await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text(title),
+          content: Text(message),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const Text('Clear'),
+            ),
+          ],
+        ),
+      ) ??
+      false;
+}
+
+void _showSettingsError(
+  BuildContext context,
+  String message,
+  Object error,
+) {
+  ScaffoldMessenger.of(context).showSnackBar(
+    snackbar(context, '$message: $error', size: SanckBarSize.BIG),
+  );
+}
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key, this.isBottomNavActive = false});
@@ -134,9 +173,7 @@ class SettingsScreen extends StatelessWidget {
                           return Container(
                             alignment: Alignment.centerRight,
                             constraints: const BoxConstraints(minWidth: 50),
-                            child: Text(
-                              item.value,
-                            ),
+                            child: Text(item.value),
                           );
                         }).toList(),
                         onChanged: settingsController.setAppLanguage,
@@ -260,6 +297,195 @@ class SettingsScreen extends StatelessWidget {
                               onChanged:
                                   settingsController.toggleCacheHomeScreenData),
                         )),
+                    ListTile(
+                        contentPadding:
+                            const EdgeInsets.only(left: 5, right: 10),
+                        title: const Text("Personal recommendations"),
+                        subtitle: const Text(
+                            "Build a local For You section from listening history, likes and skips."),
+                        trailing: Obx(
+                          () => CustSwitch(
+                              value: settingsController
+                                  .recommendationsEnabled.value,
+                              onChanged:
+                                  settingsController.toggleRecommendations),
+                        )),
+                    ListTile(
+                      contentPadding: const EdgeInsets.only(left: 5, right: 10),
+                      title: const Text("Last.fm API key"),
+                      subtitle: Obx(() => Text(
+                            settingsController.lastFmApiKey.value.isEmpty
+                                ? "Optional. Used only to find similar tracks."
+                                : "Saved locally. Used as recommendation fallback.",
+                            style: Theme.of(context).textTheme.bodyMedium,
+                          )),
+                      trailing: const Icon(Icons.key),
+                      onTap: () => showDialog(
+                        context: context,
+                        builder: (context) => const LastFmApiKeyDialog(),
+                      ),
+                    ),
+                    ListTile(
+                      contentPadding: const EdgeInsets.only(left: 5, right: 10),
+                      title: const Text("Refresh recommendations"),
+                      subtitle: const Text(
+                          "Rebuild For You from the latest listening signals."),
+                      trailing: Obx(() => settingsController
+                              .recommendationsRefreshInProgress.value
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Icon(Icons.refresh)),
+                      onTap: settingsController.refreshRecommendations,
+                    ),
+                    ListTile(
+                      contentPadding: const EdgeInsets.only(left: 5, right: 10),
+                      title: const Text("Clear recommendation history"),
+                      subtitle: const Text(
+                          "Remove local events, taste profile and cached For You results."),
+                      trailing: Obx(() => settingsController
+                              .recommendationClearInProgress.value
+                          ? const SizedBox.square(
+                              dimension: 20,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Icon(Icons.delete_outline)),
+                      onTap: () async {
+                        if (settingsController
+                            .recommendationClearInProgress.value) {
+                          return;
+                        }
+                        final confirmed = await _confirmDestructiveAction(
+                          context,
+                          title: 'Clear recommendation history?',
+                          message:
+                              'Listening events, taste data and cached recommendations will be removed.',
+                        );
+                        if (!confirmed || !context.mounted) return;
+                        try {
+                          await settingsController.clearRecommendationData();
+                          if (!context.mounted) return;
+                          ScaffoldMessenger.of(context).showSnackBar(snackbar(
+                              context, "Recommendation data cleared",
+                              size: SanckBarSize.MEDIUM));
+                        } catch (error) {
+                          if (!context.mounted) return;
+                          _showSettingsError(
+                            context,
+                            'Could not clear recommendation history',
+                            error,
+                          );
+                        }
+                      },
+                    ),
+                    ListTile(
+                        contentPadding:
+                            const EdgeInsets.only(left: 5, right: 10),
+                        title: const Text("Harmony Flow"),
+                        subtitle: const Text(
+                            "Adaptive smart queue with local taste, likes, skips and blacklist."),
+                        trailing: Obx(
+                          () => CustSwitch(
+                              value: settingsController.flowEnabled.value,
+                              onChanged: settingsController.toggleFlow),
+                        )),
+                    ListTile(
+                      contentPadding: const EdgeInsets.only(left: 5, right: 10),
+                      title: const Text("Clear Flow data"),
+                      subtitle: const Text(
+                          "Reset Flow sessions, queue plans and debug decisions."),
+                      trailing:
+                          Obx(() => settingsController.flowClearInProgress.value
+                              ? const SizedBox.square(
+                                  dimension: 20,
+                                  child:
+                                      CircularProgressIndicator(strokeWidth: 2),
+                                )
+                              : const Icon(Icons.auto_delete_outlined)),
+                      onTap: () async {
+                        if (settingsController.flowClearInProgress.value) {
+                          return;
+                        }
+                        final confirmed = await _confirmDestructiveAction(
+                          context,
+                          title: 'Clear Flow data?',
+                          message:
+                              'Flow sessions, queue plans and debug decisions will be removed.',
+                        );
+                        if (!confirmed || !context.mounted) return;
+                        try {
+                          await settingsController.clearFlowData();
+                          if (!context.mounted) return;
+                          ScaffoldMessenger.of(context).showSnackBar(snackbar(
+                              context, "Flow data cleared",
+                              size: SanckBarSize.MEDIUM));
+                        } catch (error) {
+                          if (!context.mounted) return;
+                          _showSettingsError(
+                              context, 'Could not clear Flow data', error);
+                        }
+                      },
+                    ),
+                    ListTile(
+                      contentPadding: const EdgeInsets.only(left: 5, right: 10),
+                      title: const Text("Playback audit log"),
+                      subtitle: const Text(
+                          "Last 500 actually played tracks with library markers."),
+                      trailing: const Icon(Icons.history),
+                      onTap: () {
+                        showModalBottomSheet(
+                          constraints: const BoxConstraints(maxWidth: 760),
+                          shape: const RoundedRectangleBorder(
+                            borderRadius: BorderRadius.vertical(
+                                top: Radius.circular(10.0)),
+                          ),
+                          isScrollControlled: true,
+                          context: context,
+                          builder: (context) => const PlaybackAuditLogSheet(),
+                        );
+                      },
+                    ),
+                    ListTile(
+                      contentPadding: const EdgeInsets.only(left: 5, right: 10),
+                      title: const Text("Manage Flow blacklist"),
+                      subtitle: const Text(
+                          "Review and unblock tracks or artists hidden from Flow."),
+                      trailing: const Icon(Icons.block),
+                      onTap: () {
+                        showModalBottomSheet(
+                          constraints: const BoxConstraints(maxWidth: 620),
+                          shape: const RoundedRectangleBorder(
+                            borderRadius: BorderRadius.vertical(
+                                top: Radius.circular(10.0)),
+                          ),
+                          isScrollControlled: true,
+                          context: context,
+                          builder: (context) =>
+                              const FlowBlacklistManagementSheet(),
+                        );
+                      },
+                    ),
+                    ListTile(
+                      contentPadding: const EdgeInsets.only(left: 5, right: 10),
+                      title: const Text("Flow debug log"),
+                      subtitle: const Text(
+                          "View recent recommendation scores and reason codes."),
+                      trailing: const Icon(Icons.bug_report_outlined),
+                      onTap: () {
+                        showModalBottomSheet(
+                          constraints: const BoxConstraints(maxWidth: 760),
+                          shape: const RoundedRectangleBorder(
+                            borderRadius: BorderRadius.vertical(
+                                top: Radius.circular(10.0)),
+                          ),
+                          isScrollControlled: true,
+                          context: context,
+                          builder: (context) => const FlowDebugLogSheet(),
+                        );
+                      },
+                    ),
                     ListTile(
                       contentPadding:
                           const EdgeInsets.only(left: 5, right: 10, top: 0),
@@ -702,6 +928,79 @@ class SettingsScreen extends StatelessWidget {
         ],
       ),
     );
+  }
+}
+
+class LastFmApiKeyDialog extends StatefulWidget {
+  const LastFmApiKeyDialog({super.key});
+
+  @override
+  State<LastFmApiKeyDialog> createState() => _LastFmApiKeyDialogState();
+}
+
+class _LastFmApiKeyDialogState extends State<LastFmApiKeyDialog> {
+  late final TextEditingController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(
+        text: Get.find<SettingsScreenController>().lastFmApiKey.value);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final settingsController = Get.find<SettingsScreenController>();
+    return CommonDialog(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(20, 24, 20, 12),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              "Last.fm API key",
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
+            const SizedBox(height: 12),
+            ModifiedTextField(
+              controller: _controller,
+              decoration: const InputDecoration(
+                border: OutlineInputBorder(),
+                hintText: "Paste API key",
+              ),
+              textInputAction: TextInputAction.done,
+              onSubmitted: (_) => _save(settingsController),
+            ),
+            const SizedBox(height: 12),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: Text("cancel".tr),
+                ),
+                TextButton(
+                  onPressed: () => _save(settingsController),
+                  child: const Text("Save"),
+                ),
+              ],
+            )
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _save(SettingsScreenController settingsController) async {
+    await settingsController.setLastFmApiKey(_controller.text);
+    if (mounted) Navigator.of(context).pop();
   }
 }
 

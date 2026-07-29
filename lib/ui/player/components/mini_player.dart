@@ -14,6 +14,7 @@ import '../../widgets/song_download_btn.dart';
 import '../../widgets/image_widget.dart';
 import '../../widgets/mini_player_progress_bar.dart';
 import 'animated_play_button.dart';
+import 'flow_button.dart';
 
 class MiniPlayer extends StatelessWidget {
   const MiniPlayer({super.key});
@@ -23,7 +24,8 @@ class MiniPlayer extends StatelessWidget {
     final playerController = Get.find<PlayerController>();
     final size = MediaQuery.of(context).size;
     final isWideScreen = size.width > 800;
-    final bottomNavEnabled = Get.find<SettingsScreenController>().isBottomNavBarEnabled.isTrue;
+    final bottomNavEnabled =
+        Get.find<SettingsScreenController>().isBottomNavBarEnabled.isTrue;
     return Obx(() {
       return Visibility(
         visible: playerController.isPlayerpanelTopVisible.value,
@@ -185,6 +187,23 @@ class MiniPlayer extends StatelessWidget {
                                                   .titleMedium!
                                                   .color,
                                             ))),
+                                    Obx(() => IconButton(
+                                          tooltip: "Don't recommend",
+                                          iconSize: 20,
+                                          onPressed: playerController
+                                                      .currentSong.value ==
+                                                  null
+                                              ? null
+                                              : () => playerController
+                                                  .dislikeCurrentSong(),
+                                          icon: Icon(
+                                            Icons.thumb_down_alt_outlined,
+                                            color: Theme.of(context)
+                                                .textTheme
+                                                .titleMedium!
+                                                .color,
+                                          ),
+                                        )),
                                     IconButton(
                                         iconSize: 20,
                                         onPressed:
@@ -209,24 +228,31 @@ class MiniPlayer extends StatelessWidget {
                               if (isWideScreen && !bottomNavEnabled)
                                 SizedBox(
                                     width: 40,
-                                    child: InkWell(
-                                      onTap: (playerController
-                                                  .currentQueue.isEmpty ||
-                                              (playerController
-                                                      .currentQueue.first.id ==
-                                                  playerController
-                                                      .currentSong.value?.id))
-                                          ? null
-                                          : playerController.prev,
-                                      child: Icon(
-                                        Icons.skip_previous,
-                                        color: Theme.of(context)
-                                            .textTheme
-                                            .titleMedium!
-                                            .color,
-                                        size: 35,
-                                      ),
-                                    )),
+                                    child: Obx(() {
+                                      final canGoPrevious =
+                                          playerController.canSkipToPrevious;
+                                      return IconButton(
+                                        padding: EdgeInsets.zero,
+                                        visualDensity: VisualDensity.compact,
+                                        iconSize: 35,
+                                        onPressed: canGoPrevious
+                                            ? playerController.prev
+                                            : null,
+                                        icon: Icon(
+                                          Icons.skip_previous,
+                                          color: !canGoPrevious
+                                              ? Theme.of(context)
+                                                  .textTheme
+                                                  .titleLarge!
+                                                  .color!
+                                                  .withOpacity(0.2)
+                                              : Theme.of(context)
+                                                  .textTheme
+                                                  .titleMedium!
+                                                  .color,
+                                        ),
+                                      );
+                                    })),
                               isWideScreen && !bottomNavEnabled
                                   ? Container(
                                       decoration: BoxDecoration(
@@ -250,25 +276,18 @@ class MiniPlayer extends StatelessWidget {
                               SizedBox(
                                   width: 40,
                                   child: Obx(() {
-                                    final isLastSong =
-                                        playerController.currentQueue.isEmpty ||
-                                            (!(playerController
-                                                        .isShuffleModeEnabled
-                                                        .isTrue ||
-                                                    playerController
-                                                        .isQueueLoopModeEnabled
-                                                        .isTrue) &&
-                                                (playerController
-                                                        .currentQueue.last.id ==
-                                                    playerController.currentSong
-                                                        .value?.id));
-                                    return InkWell(
-                                      onTap: isLastSong
-                                          ? null
-                                          : playerController.next,
-                                      child: Icon(
+                                    final canGoNext =
+                                        playerController.canSkipToNext;
+                                    return IconButton(
+                                      padding: EdgeInsets.zero,
+                                      visualDensity: VisualDensity.compact,
+                                      iconSize: 35,
+                                      onPressed: canGoNext
+                                          ? () => playerController.next()
+                                          : null,
+                                      icon: Icon(
                                         Icons.skip_next,
-                                        color: isLastSong
+                                        color: !canGoNext
                                             ? Theme.of(context)
                                                 .textTheme
                                                 .titleLarge!
@@ -278,7 +297,6 @@ class MiniPlayer extends StatelessWidget {
                                                 .textTheme
                                                 .titleMedium!
                                                 .color,
-                                        size: 35,
                                       ),
                                     );
                                   })),
@@ -409,6 +427,7 @@ class MiniPlayer extends StatelessWidget {
                                           },
                                           icon: const Icon(Icons.queue_music),
                                         ),
+                                        const FlowButton(compact: true),
                                         if (size.width > 860)
                                           Padding(
                                             padding: const EdgeInsets.only(

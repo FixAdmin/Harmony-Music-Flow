@@ -10,9 +10,11 @@ import '../Library/library.dart';
 import '../Search/search_screen.dart';
 import '../Settings/settings_screen_controller.dart';
 import '/ui/player/player_controller.dart';
+import '/services/recommendation/recommendation_service.dart';
 import '/ui/widgets/create_playlist_dialog.dart';
 import '../../navigator.dart';
 import '../../widgets/content_list_widget.dart';
+import '../../widgets/flow_stations_widget.dart';
 import '../../widgets/quickpickswidget.dart';
 import '../../widgets/shimmer_widgets/home_shimmer.dart';
 import 'home_screen_controller.dart';
@@ -111,6 +113,8 @@ class Body extends StatelessWidget {
   Widget build(BuildContext context) {
     final homeScreenController = Get.find<HomeScreenController>();
     final settingsScreenController = Get.find<SettingsScreenController>();
+    final recommendationService = Get.find<RecommendationService>();
+    final playerController = Get.find<PlayerController>();
     final size = MediaQuery.of(context).size;
     final topPadding = GetPlatform.isDesktop
         ? 85.0
@@ -208,11 +212,82 @@ class Body extends StatelessWidget {
                                 //       scrollController: scrollController);
                                 // }),
                                 Container(
-                                  padding: const EdgeInsets.fromLTRB(0, 8, 0, 16),
-                                  child: const Text(
-                                    "Harmony Music",
-                                    style: TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.bold),)
+                                    padding:
+                                        const EdgeInsets.fromLTRB(0, 8, 0, 16),
+                                    child: const Text(
+                                      "Harmony Music",
+                                      style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 28,
+                                          fontWeight: FontWeight.bold),
+                                    )),
+                                Padding(
+                                  padding:
+                                      const EdgeInsets.fromLTRB(0, 0, 0, 18),
+                                  child: Align(
+                                    alignment: Alignment.centerLeft,
+                                    child: Obx(() => FilledButton.icon(
+                                          onPressed: settingsScreenController
+                                                      .flowEnabled.isFalse ||
+                                                  playerController
+                                                      .isFlowStarting.isTrue
+                                              ? null
+                                              : () =>
+                                                  playerController.startFlow(),
+                                          icon: playerController
+                                                  .isFlowStarting.isTrue
+                                              ? const SizedBox.square(
+                                                  dimension: 16,
+                                                  child:
+                                                      CircularProgressIndicator(
+                                                    strokeWidth: 2,
+                                                  ),
+                                                )
+                                              : const Icon(Icons.auto_awesome),
+                                          label: Text(playerController
+                                                  .isFlowStarting.isTrue
+                                              ? 'Building Harmony Flow'
+                                              : 'Start Harmony Flow'),
+                                        )),
+                                  ),
                                 ),
+                                Obx(() {
+                                  if (settingsScreenController
+                                          .flowEnabled.isFalse ||
+                                      homeScreenController
+                                          .flowStations.isEmpty) {
+                                    return const SizedBox.shrink();
+                                  }
+                                  return FlowStationsWidget(
+                                    stations: homeScreenController.flowStations
+                                        .toList(),
+                                    isLoading:
+                                        playerController.isFlowStarting.value,
+                                    onStationTap:
+                                        playerController.startFlowStation,
+                                  );
+                                }),
+                                Obx(() {
+                                  final content =
+                                      recommendationService.forYou.value;
+                                  if (settingsScreenController
+                                          .recommendationsEnabled.isFalse ||
+                                      content.songList.isEmpty) {
+                                    return const SizedBox.shrink();
+                                  }
+                                  return QuickPicksWidget(
+                                    content: content,
+                                    scrollController: homeScreenController
+                                        .forYouScrollController,
+                                    translateTitle: false,
+                                    playbackSource: 'for_you',
+                                    enableDismiss: true,
+                                    onDismiss:
+                                        recommendationService.dismissTrack,
+                                    onTap: recommendationService
+                                        .recordRecommendationClick,
+                                  );
+                                }),
                                 ...getWidgetList(
                                     homeScreenController.middleContent,
                                     homeScreenController),

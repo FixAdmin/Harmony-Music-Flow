@@ -1,3 +1,13 @@
+# Unreleased - Harmony Music Flow fork
+
+* Added Harmony Flow with adaptive queue replenishment and generated stations.
+* Added local taste profiling from playback, completion, likes, skips, and recency.
+* Added YouTube Music radio/related candidates and optional Last.fm discovery fallback.
+* Added Flow dislike, track/artist blacklist management, and library automation.
+* Added playback audit history with local-library markers.
+* Added safeguards for first-track queue startup, natural completion, and stale playback requests.
+* Added focused tests for ranking, candidate mixing, queue policy, feedback, and playback lifecycle behavior.
+
 # 1.12.2
 * Added wakelock support to keep screen awake while playing music (can be toggled from settings)
 * Enabled downloading in external storage for Android devices

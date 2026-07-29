@@ -1,6 +1,7 @@
 import 'package:flutter/gestures.dart' show kSecondaryMouseButton;
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:audio_service/audio_service.dart';
 
 import '/models/quick_picks.dart';
 import '../player/player_controller.dart';
@@ -8,10 +9,24 @@ import 'image_widget.dart';
 import 'songinfo_bottom_sheet.dart';
 
 class QuickPicksWidget extends StatelessWidget {
-  const QuickPicksWidget(
-      {super.key, required this.content, this.scrollController});
+  const QuickPicksWidget({
+    super.key,
+    required this.content,
+    this.scrollController,
+    this.translateTitle = true,
+    this.enableDismiss = false,
+    this.onDismiss,
+    this.onTap,
+    this.playbackSource,
+  });
+
   final QuickPicks content;
   final ScrollController? scrollController;
+  final bool translateTitle;
+  final bool enableDismiss;
+  final void Function(MediaItem song)? onDismiss;
+  final void Function(MediaItem song)? onTap;
+  final String? playbackSource;
 
   @override
   Widget build(BuildContext context) {
@@ -25,7 +40,9 @@ class QuickPicksWidget extends StatelessWidget {
           Align(
               alignment: Alignment.centerLeft,
               child: Text(
-                content.title.toLowerCase().removeAllWhitespace.tr,
+                translateTitle
+                    ? content.title.toLowerCase().removeAllWhitespace.tr
+                    : content.title,
                 style: Theme.of(context).textTheme.titleLarge,
               )),
           const SizedBox(height: 10),
@@ -83,8 +100,11 @@ class QuickPicksWidget extends StatelessWidget {
                             style: Theme.of(context).textTheme.titleSmall,
                           ),
                           onTap: () {
-                            playerController
-                                .pushSongToQueue(content.songList[item]);
+                            onTap?.call(content.songList[item]);
+                            playerController.pushSongToQueue(
+                              content.songList[item],
+                              playbackSource: playbackSource,
+                            );
                           },
                           onLongPress: () {
                             showModalBottomSheet(
@@ -103,30 +123,40 @@ class QuickPicksWidget extends StatelessWidget {
                             ).whenComplete(
                                 () => Get.delete<SongInfoController>());
                           },
-                          trailing: (GetPlatform.isDesktop)
+                          trailing: enableDismiss
                               ? IconButton(
+                                  tooltip: "Don't recommend",
                                   splashRadius: 20,
-                                  onPressed: () {
-                                    showModalBottomSheet(
-                                      constraints:
-                                          const BoxConstraints(maxWidth: 500),
-                                      shape: const RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.vertical(
-                                            top: Radius.circular(10.0)),
-                                      ),
-                                      isScrollControlled: true,
-                                      context: playerController.homeScaffoldkey
-                                          .currentState!.context,
-                                      //constraints: BoxConstraints(maxHeight:Get.height),
-                                      barrierColor:
-                                          Colors.transparent.withAlpha(100),
-                                      builder: (context) => SongInfoBottomSheet(
-                                          content.songList[item]),
-                                    ).whenComplete(
-                                        () => Get.delete<SongInfoController>());
-                                  },
-                                  icon: const Icon(Icons.more_vert))
-                              : null),
+                                  onPressed: () =>
+                                      onDismiss?.call(content.songList[item]),
+                                  icon: const Icon(Icons.close))
+                              : (GetPlatform.isDesktop)
+                                  ? IconButton(
+                                      splashRadius: 20,
+                                      onPressed: () {
+                                        showModalBottomSheet(
+                                          constraints: const BoxConstraints(
+                                              maxWidth: 500),
+                                          shape: const RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.vertical(
+                                                top: Radius.circular(10.0)),
+                                          ),
+                                          isScrollControlled: true,
+                                          context: playerController
+                                              .homeScaffoldkey
+                                              .currentState!
+                                              .context,
+                                          //constraints: BoxConstraints(maxHeight:Get.height),
+                                          barrierColor:
+                                              Colors.transparent.withAlpha(100),
+                                          builder: (context) =>
+                                              SongInfoBottomSheet(
+                                                  content.songList[item]),
+                                        ).whenComplete(() =>
+                                            Get.delete<SongInfoController>());
+                                      },
+                                      icon: const Icon(Icons.more_vert))
+                                  : null),
                     );
                   }),
             ),
