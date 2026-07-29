@@ -1,6 +1,6 @@
 # Contributing
 
-Thanks for helping improve Harmony Music Flow. This is an experimental fork, so small, testable changes are preferred.
+Thanks for helping improve Harmony Music Flow. Small, testable changes are preferred.
 
 ## Before Opening A Pull Request
 
@@ -29,4 +29,3 @@ Do not force the application locale. Existing language selection must continue t
 ## Legal And Content Boundaries
 
 Do not add bundled copyrighted media, credentials, provider circumvention instructions, or branding that implies endorsement by an upstream maintainer or content provider. Contributions remain subject to the repository license and preserved upstream conditions.
-

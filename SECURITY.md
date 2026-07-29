@@ -8,5 +8,4 @@ Include the affected platform, app version or commit, reproduction conditions, i
 
 ## Supported Versions
 
-This fork is experimental and currently has no formally supported release line. Security fixes are applied to the active development branch when maintainers can reproduce and validate them.
-
+This fork currently has no formally supported release line. Security fixes are applied to the active development branch when maintainers can reproduce and validate them.

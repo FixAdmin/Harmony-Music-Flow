@@ -1,10 +1,10 @@
 # Harmony Music Flow
 
-An experimental, community-maintained fork of [Bikram-Kumar/Harmony-Music](https://github.com/Bikram-Kumar/Harmony-Music), which continues the original [anandnet/Harmony-Music](https://github.com/anandnet/Harmony-Music) project.
+A community-maintained fork of [Bikram-Kumar/Harmony-Music](https://github.com/Bikram-Kumar/Harmony-Music), which continues the original [anandnet/Harmony-Music](https://github.com/anandnet/Harmony-Music) project.
 
 Harmony Music is a Flutter music client for Android, Windows, and Linux. This fork adds a local-first recommendation system and **Harmony Flow**, an adaptive queue that mixes library tracks with related discoveries.
 
-> This fork is unofficial and is not affiliated with or endorsed by the upstream maintainers, YouTube, YouTube Music, Last.fm, or any content provider. The recommendation features are experimental and may change as playback data is evaluated.
+> This fork is unofficial and is not affiliated with or endorsed by the upstream maintainers, YouTube, YouTube Music, Last.fm, or any content provider. Recommendation behavior may change as playback data is evaluated.
 
 ![Harmony Music cover](cover.png)
 
@@ -97,4 +97,3 @@ This software is provided as-is, without warranty. It is not sponsored, funded, 
 - [ytmusicapi](https://github.com/sigma67/ytmusicapi) as an upstream learning reference
 - [LRCLIB](https://lrclib.net/) for lyrics
 - [Piped](https://piped.video/) for playlist integration
-
