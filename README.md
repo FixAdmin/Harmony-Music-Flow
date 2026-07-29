@@ -17,7 +17,6 @@ Harmony Music is a Flutter music client for Android, Windows, and Linux. This fo
 - **Flow feedback**: dislike tracks, blacklist tracks or artists, and remove blacklist entries in Settings.
 - **Playback audit**: inspect up to 500 recently played tracks with library/source markers.
 - **Library automation**: liked Flow tracks can be added to the library and downloaded when the existing download support is available.
-- **English fallback**: existing language selection is preserved; custom strings without a translation remain in English.
 
 See [Harmony Flow architecture](docs/HARMONY_FLOW.md) for the current behavior and design limits.
 
