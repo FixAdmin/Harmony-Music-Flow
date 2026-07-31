@@ -147,4 +147,23 @@ void main() {
     expect(profile.wasSkipped(item), isFalse);
     expect(profile.recentSeeds.map((seed) => seed.id), contains(item.id));
   });
+
+  test('a historical Flow block does not survive an explicit unblock',
+      () async {
+    final item = song('restored', 'Restored Track', 'Nova');
+    await addEvent(
+      ListeningEventType.completed70,
+      item,
+      now.subtract(const Duration(minutes: 2)),
+    );
+    await addEvent(
+      ListeningEventType.flowBlockTrack,
+      item,
+      now.subtract(const Duration(minutes: 1)),
+    );
+
+    final profile = await TasteProfileService(now: () => now).buildProfile();
+
+    expect(profile.recentSeeds.map((seed) => seed.id), contains(item.id));
+  });
 }

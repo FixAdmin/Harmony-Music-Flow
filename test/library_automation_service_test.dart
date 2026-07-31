@@ -80,4 +80,23 @@ void main() {
 
     expect(Hive.box('FlowLiked').length, 1);
   });
+
+  test('unlikeTrack removes the song from favorites and Flow playlist',
+      () async {
+    await Hive.openBox('FlowLiked');
+    Hive.box('AppPrefs').put('flowLikedPlaylistId', 'FlowLiked');
+    final service = LibraryAutomationService();
+    final item = song('a', 'Track', 'Artist');
+    await service.likeTrack(item);
+
+    await service.unlikeTrack(item);
+
+    expect(Hive.box('LIBFAV').containsKey(item.id), isFalse);
+    expect(
+      Hive.box('FlowLiked').values.whereType<Map>().any(
+            (entry) => entry['videoId'] == item.id,
+          ),
+      isFalse,
+    );
+  });
 }

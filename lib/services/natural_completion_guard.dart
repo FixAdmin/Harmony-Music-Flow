@@ -11,6 +11,12 @@ class NaturalCompletionGuard {
     _completionClaimed = false;
   }
 
+  void cancel() {
+    _requestId = null;
+    _approachObserved = false;
+    _completionClaimed = false;
+  }
+
   bool observe({
     required int requestId,
     required Duration position,

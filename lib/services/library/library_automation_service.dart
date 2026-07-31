@@ -59,6 +59,10 @@ class LibraryAutomationService extends GetxService {
   Future<void> unlikeTrack(MediaItem song) async {
     final favBox = await Hive.openBox('LIBFAV');
     await favBox.delete(song.id);
+    final likedPlaylistId = _prefsBox.get('flowLikedPlaylistId') as String?;
+    if (likedPlaylistId != null && likedPlaylistId.trim().isNotEmpty) {
+      await _removeFromPlaylist(song, likedPlaylistId);
+    }
     await _feedbackTracker.markMeaningfulChange();
   }
 
@@ -70,5 +74,17 @@ class LibraryAutomationService extends GetxService {
     if (!exists) {
       await playlistBox.add(MediaItemBuilder.toJson(song));
     }
+  }
+
+  Future<void> _removeFromPlaylist(MediaItem song, String playlistId) async {
+    final playlistBox = await Hive.openBox(playlistId);
+    final keys = playlistBox
+        .toMap()
+        .entries
+        .where((entry) =>
+            entry.value is Map && (entry.value as Map)['videoId'] == song.id)
+        .map((entry) => entry.key)
+        .toList();
+    if (keys.isNotEmpty) await playlistBox.deleteAll(keys);
   }
 }

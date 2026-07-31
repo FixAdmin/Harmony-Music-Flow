@@ -276,6 +276,24 @@ class FlowService extends GetxService {
     await _recordFeedback(action, song, sessionId);
   }
 
+  Future<void> undoTrackBlock(
+    MediaItem song, {
+    bool restoreSeed = true,
+  }) async {
+    await _blacklistService.unblockTrack(_blacklistService.trackKey(song));
+    final current = session.value;
+    if (!restoreSeed || current == null || !current.isActive) return;
+    final generation = _generation;
+    final seedIds = [
+      song.id,
+      ...current.seedSongIds.where((id) => id != song.id),
+    ].take(12).toList();
+    if (!_isCurrent(generation, current.id)) return;
+    final restored = current.copyWith(seedSongIds: seedIds);
+    session.value = restored;
+    await _sessionBox.put('current', restored.toJson());
+  }
+
   Future<List<MediaItem>> planFallbackCandidates({
     required List<RecommendationCandidate> candidates,
     required List<MediaItem> currentQueue,

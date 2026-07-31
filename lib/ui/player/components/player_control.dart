@@ -130,14 +130,20 @@ class PlayerControlWidget extends StatelessWidget {
   Widget _dislikeButton(
       PlayerController playerController, BuildContext context) {
     return Obx(() => IconButton(
-          tooltip: "Don't recommend",
-          onPressed: playerController.currentSong.value == null
+          tooltip: "Don't recommend in Flow",
+          onPressed: playerController.currentSong.value == null ||
+                  playerController.isDislikeInProgress.isTrue
               ? null
               : () => playerController.dislikeCurrentSong(),
-          icon: Icon(
-            Icons.thumb_down_alt_outlined,
-            color: Theme.of(context).textTheme.titleMedium!.color,
-          ),
+          icon: playerController.isDislikeInProgress.isTrue
+              ? const SizedBox.square(
+                  dimension: 18,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : Icon(
+                  Icons.thumb_down_alt_outlined,
+                  color: Theme.of(context).textTheme.titleMedium!.color,
+                ),
         ));
   }
 

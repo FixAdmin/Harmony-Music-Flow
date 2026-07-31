@@ -173,6 +173,35 @@ void main() {
     expect(stats['sessionId'], capturedSessionId);
   });
 
+  test('undoTrackBlock unblocks the track and restores it as a seed',
+      () async {
+    final blacklist = BlacklistService();
+    final service = FlowService(
+      tuner: FlowTuner(),
+      tasteProfileService: _FakeTasteProfileService(emptyProfile()),
+      candidateMixer: _StationCandidateMixer(),
+      queuePlanner: FlowQueuePlanner(),
+      blacklistService: blacklist,
+      feedbackPolicy: FlowFeedbackPolicy(),
+      debugLogger: FlowDebugLogger(),
+      feedbackTracker: FeedbackTracker(),
+    );
+    const item = MediaItem(
+      id: 'blocked-seed',
+      title: 'Blocked Seed',
+      artist: 'Nova',
+    );
+    await service.start(seed: item, station: station('alpha'));
+    await service.onFeedback(FlowFeedbackAction.blockTrack, item);
+    expect(blacklist.isTrackBlocked(item), isTrue);
+    expect(service.session.value?.seedSongIds, isNot(contains(item.id)));
+
+    await service.undoTrackBlock(item);
+
+    expect(blacklist.isTrackBlocked(item), isFalse);
+    expect(service.session.value?.seedSongIds.first, item.id);
+  });
+
   test('station launch and tuning synchronize tuner without losing station',
       () async {
     final tuner = FlowTuner();

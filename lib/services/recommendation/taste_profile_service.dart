@@ -97,9 +97,12 @@ class TasteProfileService extends GetxService {
           _addScore(topArtists, artist, -1.0 * negativeDecay);
           break;
         case ListeningEventType.dismissRecommendation:
+          suppressedSeedKeys.add(songKey);
+          break;
         case ListeningEventType.flowBlockTrack:
         case ListeningEventType.flowBlockArtist:
-          suppressedSeedKeys.add(songKey);
+          // Active blacklist entries and dismissals own suppression. Keeping
+          // historical block events neutral makes unblock/undo reversible.
           break;
       }
 

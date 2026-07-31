@@ -188,21 +188,32 @@ class MiniPlayer extends StatelessWidget {
                                                   .color,
                                             ))),
                                     Obx(() => IconButton(
-                                          tooltip: "Don't recommend",
+                                          tooltip: "Don't recommend in Flow",
                                           iconSize: 20,
                                           onPressed: playerController
-                                                      .currentSong.value ==
-                                                  null
+                                                          .currentSong.value ==
+                                                      null ||
+                                                  playerController
+                                                      .isDislikeInProgress
+                                                      .isTrue
                                               ? null
                                               : () => playerController
                                                   .dislikeCurrentSong(),
-                                          icon: Icon(
-                                            Icons.thumb_down_alt_outlined,
-                                            color: Theme.of(context)
-                                                .textTheme
-                                                .titleMedium!
-                                                .color,
-                                          ),
+                                          icon: playerController
+                                                  .isDislikeInProgress.isTrue
+                                              ? const SizedBox.square(
+                                                  dimension: 16,
+                                                  child:
+                                                      CircularProgressIndicator(
+                                                          strokeWidth: 2),
+                                                )
+                                              : Icon(
+                                                  Icons.thumb_down_alt_outlined,
+                                                  color: Theme.of(context)
+                                                      .textTheme
+                                                      .titleMedium!
+                                                      .color,
+                                                ),
                                         )),
                                     IconButton(
                                         iconSize: 20,

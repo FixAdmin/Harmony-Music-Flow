@@ -107,4 +107,27 @@ void main() {
       isFalse,
     );
   });
+
+  test('cancel prevents a stopped track from triggering auto-next', () {
+    final guard = NaturalCompletionGuard();
+    guard.begin(7);
+
+    guard.observe(
+      requestId: 7,
+      position: const Duration(seconds: 98),
+      duration: const Duration(seconds: 100),
+      terminalOffset: Duration.zero,
+    );
+    guard.cancel();
+
+    expect(
+      guard.observe(
+        requestId: 7,
+        position: const Duration(seconds: 100),
+        duration: const Duration(seconds: 100),
+        terminalOffset: Duration.zero,
+      ),
+      isFalse,
+    );
+  });
 }

@@ -57,6 +57,7 @@ class PlayerController extends GetxController
   bool isRadioModeOn = false;
   final isFlowModeOn = false.obs;
   final isFlowStarting = false.obs;
+  final isDislikeInProgress = false.obs;
   bool _flowRefillInProgress = false;
   int _flowLaunchGeneration = 0;
   Future<void> _flowRebuildTail = Future<void>.value();
@@ -803,11 +804,29 @@ class PlayerController extends GetxController
     ));
   }
 
+  bool _isCurrentSong(MediaItem song) {
+    final current = currentSong.value;
+    return current != null && RecommendationMediaJson.sameSong(current, song);
+  }
+
+  Future<void> _advanceAfterFlowFeedback() async {
+    final hasNext = await prepareNextQueueItem();
+    if (!hasNext) {
+      _showNoNextTrackFound();
+      return;
+    }
+    await _audioHandler.skipToNext();
+  }
+
   Future<void> blockTrackFromFlow(MediaItem song) async {
+    final wasCurrent = _isCurrentSong(song);
+    if (wasCurrent) {
+      await _audioHandler.customAction('cancelCurrentPlayback');
+    }
     await _flowService.onFeedback(FlowFeedbackAction.blockTrack, song);
     await _removeUpcomingMatches(song: song);
-    if (currentSong.value?.id == song.id) {
-      await next();
+    if (wasCurrent) {
+      await _advanceAfterFlowFeedback();
     }
     unawaited(_rebuildUpcomingFlow(
       seed: currentSong.value,
@@ -816,10 +835,14 @@ class PlayerController extends GetxController
   }
 
   Future<void> blockArtistFromFlow(MediaItem song) async {
+    final wasCurrent = _isCurrentSong(song);
+    if (wasCurrent) {
+      await _audioHandler.customAction('cancelCurrentPlayback');
+    }
     await _flowService.onFeedback(FlowFeedbackAction.blockArtist, song);
     await _removeUpcomingMatches(artist: song.artist);
-    if (currentSong.value?.id == song.id) {
-      await next();
+    if (wasCurrent) {
+      await _advanceAfterFlowFeedback();
     }
     unawaited(_rebuildUpcomingFlow(
       seed: currentSong.value,
@@ -829,8 +852,35 @@ class PlayerController extends GetxController
 
   Future<void> dislikeCurrentSong() async {
     final song = currentSong.value;
-    if (song == null) return;
-    await blockTrackFromFlow(song);
+    if (song == null || isDislikeInProgress.isTrue) return;
+
+    final wasCurrent = _isCurrentSong(song);
+    isDislikeInProgress.value = true;
+    try {
+      if (wasCurrent) {
+        await _audioHandler.customAction('cancelCurrentPlayback');
+      }
+      await _flowService.onFeedback(FlowFeedbackAction.blockTrack, song);
+      await _removeUpcomingMatches(song: song);
+      if (wasCurrent) {
+        await _advanceAfterFlowFeedback();
+      }
+      unawaited(_rebuildUpcomingFlow(
+        seed: currentSong.value,
+        removeLike: song,
+      ));
+    } catch (error) {
+      final context = homeScaffoldkey.currentContext ?? Get.context;
+      if (context != null && context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(snackbar(
+          context,
+          'Could not update Flow feedback: $error',
+          size: SanckBarSize.MEDIUM,
+        ));
+      }
+    } finally {
+      isDislikeInProgress.value = false;
+    }
   }
 
   Future<int> _addRadioContinuation(dynamic item) async {

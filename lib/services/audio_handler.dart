@@ -196,7 +196,8 @@ class MyAudioHandler extends BaseAudioHandler with GetxServiceMixin {
         //     _player.play();
         //   }
         // });
-        customAction("playByIndex", {'index': currentIndex, 'newUrl': true});
+        await customAction(
+            "playByIndex", {'index': currentIndex, 'newUrl': true});
         await _player.seek(curPos, index: 0);
       }
     });
@@ -532,14 +533,26 @@ class MyAudioHandler extends BaseAudioHandler with GetxServiceMixin {
     switch (name) {
       case 'dispose':
         _playbackRequestGuard.cancel();
+        _naturalCompletionGuard.cancel();
         await _player.dispose();
         super.stop();
+        break;
+
+      case 'cancelCurrentPlayback':
+        _playbackRequestGuard.cancel();
+        _naturalCompletionGuard.cancel();
+        isSongLoading = false;
+        currentSongUrl = null;
+        await _player.pause();
         break;
 
       case 'playByIndex':
         final songIndex = extras!['index'] as int;
         if (songIndex < 0 || songIndex >= queue.value.length) return;
         final requestId = _playbackRequestGuard.begin();
+        _naturalCompletionGuard.cancel();
+        await _player.pause();
+        if (!_playbackRequestGuard.matches(requestId)) return;
         currentIndex = songIndex;
         final isNewUrlReq = extras['newUrl'] ?? false;
         final currentSong = _publishPlaybackRequest(
@@ -594,7 +607,9 @@ class MyAudioHandler extends BaseAudioHandler with GetxServiceMixin {
             }
           } else if (_isCurrentPlaybackRequest(requestId, currentSong.id)) {
             await _player.play();
-            _scheduleNextTrackWarmup();
+            if (_isCurrentPlaybackRequest(requestId, currentSong.id)) {
+              _scheduleNextTrackWarmup();
+            }
           }
         });
         break;
@@ -633,6 +648,9 @@ class MyAudioHandler extends BaseAudioHandler with GetxServiceMixin {
 
       case 'setSourceNPlay':
         final requestId = _playbackRequestGuard.begin();
+        _naturalCompletionGuard.cancel();
+        await _player.pause();
+        if (!_playbackRequestGuard.matches(requestId)) return;
         _naturalCompletionGuard.begin(requestId);
         final currMed = (extras!['mediaItem'] as MediaItem).copyWith(extras: {
           ...?((extras['mediaItem'] as MediaItem).extras),
@@ -671,7 +689,9 @@ class MyAudioHandler extends BaseAudioHandler with GetxServiceMixin {
             _normalizeVolume(streamInfo.audio!.loudnessDb);
           }
           await _player.play();
-          _scheduleNextTrackWarmup();
+          if (_isCurrentPlaybackRequest(requestId, currMed.id)) {
+            _scheduleNextTrackWarmup();
+          }
         });
         break;
 
