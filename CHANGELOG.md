@@ -1,3 +1,7 @@
+# 1.13.0-flow.2
+
+* Start Harmony Flow returns to the personal mix without keeping the previous station's theme or using its current track as the starting seed.
+
 # 1.13.0-flow.1
 
 * Fixed online tracks failing to load or playing without sound on Windows.

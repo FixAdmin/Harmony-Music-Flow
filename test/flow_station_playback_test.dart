@@ -107,11 +107,13 @@ void main() {
     flow.selectedStation = station('cinematic');
     flow.result = [next];
 
-    await controller.startFlow();
+    await controller.startPersonalFlow();
 
     expect(audio.played, ['next']);
     expect(audio.queue.value.map((item) => item.id), ['next']);
     expect(flow.selectedStation, isNull);
+    expect(flow.seed, isNull);
+    expect(flow.usePersonalSettings, isTrue);
     expect(controller.playinfrom.value.name, 'Harmony Flow');
   });
 
@@ -119,10 +121,10 @@ void main() {
       (tester) async {
     await mount(tester);
     flow.result = [next];
-    await controller.startFlow();
+    await controller.startPersonalFlow();
     flow.result = [const MediaItem(id: 'fresh', title: 'Fresh')];
 
-    await controller.startFlow();
+    await controller.startPersonalFlow();
 
     expect(audio.played, ['next', 'fresh']);
     expect(audio.queue.value.map((item) => item.id), ['fresh']);
@@ -198,6 +200,7 @@ class _FlowService extends GetxService implements FlowService {
   Future<List<MediaItem>>? pending;
   MediaItem? seed;
   FlowStation? selectedStation;
+  bool usePersonalSettings = false;
   @override
   bool get isEnabled => true;
   @override
@@ -210,9 +213,11 @@ class _FlowService extends GetxService implements FlowService {
     MediaItem? seed,
     FlowMode mode = FlowMode.auto,
     FlowStation? station,
+    bool usePersonalSettings = false,
   }) {
     this.seed = seed;
     selectedStation = station;
+    this.usePersonalSettings = usePersonalSettings;
     isActive.value = true;
     return pending ?? Future.value(result);
   }

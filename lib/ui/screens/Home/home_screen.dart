@@ -232,8 +232,8 @@ class Body extends StatelessWidget {
                                                   playerController
                                                       .isFlowStarting.isTrue
                                               ? null
-                                              : () =>
-                                                  playerController.startFlow(),
+                                              : playerController
+                                                  .startPersonalFlow,
                                           icon: playerController
                                                   .isFlowStarting.isTrue
                                               ? const SizedBox.square(

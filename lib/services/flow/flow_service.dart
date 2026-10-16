@@ -68,6 +68,7 @@ class FlowService extends GetxService {
     MediaItem? seed,
     FlowMode mode = FlowMode.auto,
     FlowStation? station,
+    bool usePersonalSettings = false,
   }) async {
     if (!isEnabled) return [];
     final generation = ++_generation;
@@ -76,7 +77,9 @@ class FlowService extends GetxService {
     final previousTuner = _tuner.current.value;
     try {
       final tuner = station == null
-          ? await _settingsForMode(mode)
+          ? await _settingsForMode(mode,
+              usePersonalSettings:
+                  usePersonalSettings || previousSession?.station != null)
           : await _settingsForStation(station);
       if (generation != _generation) return [];
 
@@ -195,6 +198,9 @@ class FlowService extends GetxService {
     if (!_isCurrent(generation, current.id)) return;
     final updated = current.copyWith(tuner: tuner);
     session.value = updated;
+    if (current.station == null) {
+      await _sessionBox.put('personalTuner', tuner.toJson());
+    }
     await _sessionBox.put('current', updated.toJson());
   }
 
@@ -458,12 +464,24 @@ class FlowService extends GetxService {
     });
   }
 
-  Future<FlowTunerSettings> _settingsForMode(FlowMode mode) async {
+  Future<FlowTunerSettings> _settingsForMode(FlowMode mode,
+      {bool usePersonalSettings = false}) async {
+    if (usePersonalSettings) {
+      final saved = _sessionBox.get('personalTuner');
+      final personal = saved is Map
+          ? FlowTunerSettings.fromJson(saved)
+          : FlowTunerSettings.defaults();
+      await _tuner.applySettings(personal);
+    }
     await _tuner.setMode(mode);
+    await _sessionBox.put('personalTuner', _tuner.current.value.toJson());
     return _tuner.current.value;
   }
 
   Future<FlowTunerSettings> _settingsForStation(FlowStation station) async {
+    if (session.value?.station == null) {
+      await _sessionBox.put('personalTuner', _tuner.current.value.toJson());
+    }
     final settings = FlowTunerSettings.defaults().copyWith(
       mode: _modeFromName(station.modeName),
       familiarity: station.familiarity,

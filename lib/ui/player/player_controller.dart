@@ -601,6 +601,7 @@ class PlayerController extends GetxController
     FlowStation? station,
     bool useCurrentSongAsSeed = true,
     bool startNewTrack = true,
+    bool usePersonalSettings = false,
   }) async {
     if (!_flowService.isEnabled) {
       isFlowModeOn.value = false;
@@ -672,6 +673,7 @@ class PlayerController extends GetxController
         seed: seed,
         mode: mode,
         station: station,
+        usePersonalSettings: usePersonalSettings,
       );
 
       final seedWasPlaying = seed != null &&
@@ -759,6 +761,13 @@ class PlayerController extends GetxController
         _flowLaunchCompleter = null;
       }
     }
+  }
+
+  Future<void> startPersonalFlow() {
+    return startFlow(
+      useCurrentSongAsSeed: false,
+      usePersonalSettings: true,
+    );
   }
 
   Future<void> startFlowStation(FlowStation station) {

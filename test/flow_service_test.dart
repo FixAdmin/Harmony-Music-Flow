@@ -173,8 +173,7 @@ void main() {
     expect(stats['sessionId'], capturedSessionId);
   });
 
-  test('undoTrackBlock unblocks the track and restores it as a seed',
-      () async {
+  test('undoTrackBlock unblocks the track and restores it as a seed', () async {
     final blacklist = BlacklistService();
     final service = FlowService(
       tuner: FlowTuner(),
@@ -229,6 +228,57 @@ void main() {
     expect(tuner.current.value.familiarity, .9);
     expect(service.session.value?.tuner.familiarity, .9);
     expect(service.session.value?.station?.id, 'alpha');
+  });
+
+  test('personal mix restores personal settings after multiple stations',
+      () async {
+    final tuner = FlowTuner();
+    final personal = FlowTunerSettings.defaults().copyWith(
+      familiarity: .85,
+      variety: .6,
+      genres: {'Rock'},
+    );
+    await tuner.applySettings(personal);
+    final service = makeService(tuner);
+    await service.start(station: station('sad'));
+    await service.start(station: station('night'));
+
+    await service.start(usePersonalSettings: true);
+
+    expect(service.session.value?.station, isNull);
+    expect(tuner.current.value.genres, {'Rock'});
+    expect(tuner.current.value.familiarity, .85);
+    expect(tuner.current.value.mode, FlowMode.auto);
+  });
+
+  test('legacy station filters are not reused by a personal mix', () async {
+    final tuner = FlowTuner();
+    await tuner.applySettings(FlowTunerSettings.defaults().copyWith(
+      mode: FlowMode.melancholy,
+      genres: {'sad'},
+      familiarity: .2,
+    ));
+    final service = makeService(tuner);
+
+    await service.start(usePersonalSettings: true);
+
+    expect(tuner.current.value.toJson(), FlowTunerSettings.defaults().toJson());
+    expect(service.session.value?.station, isNull);
+  });
+
+  test('personal settings survive restarting inside a station', () async {
+    final tuner = FlowTuner();
+    await tuner.setFamiliarity(.9);
+    final service = makeService(tuner);
+    await service.start(station: station('sad'));
+    final restoredTuner = FlowTuner()..load();
+    final restored = makeService(restoredTuner)..onInit();
+
+    await restored.start(usePersonalSettings: true);
+
+    expect(restoredTuner.current.value.genres, isEmpty);
+    expect(restoredTuner.current.value.familiarity, .9);
+    expect(restored.session.value?.station, isNull);
   });
 
   test('restores a valid active session and its tuner state on init', () async {
@@ -444,6 +494,17 @@ TasteProfile emptyProfile() {
     dismissedSongIds: const {},
   );
 }
+
+FlowService makeService(FlowTuner tuner) => FlowService(
+      tuner: tuner,
+      tasteProfileService: _FakeTasteProfileService(emptyProfile()),
+      candidateMixer: _StationCandidateMixer(),
+      queuePlanner: FlowQueuePlanner(),
+      blacklistService: BlacklistService(),
+      feedbackPolicy: FlowFeedbackPolicy(),
+      debugLogger: FlowDebugLogger(),
+      feedbackTracker: FeedbackTracker(),
+    );
 
 FlowStation station(String id) {
   return FlowStation(
