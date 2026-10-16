@@ -8,6 +8,10 @@ Harmony Music is a Flutter music client for Android, Windows, and Linux. This fo
 
 ![Harmony Music cover](cover.png)
 
+## Download For Windows
+
+Download the portable ZIP from [Releases](https://github.com/FixAdmin/Harmony-Music-Flow/releases), extract the entire archive, and run `harmonymusic.exe`. Keep the included folders and DLLs beside the executable. The build is unsigned.
+
 ## Harmony Flow
 
 - Start Flow to keep music playing with a mix of familiar tracks and related discoveries.
@@ -64,7 +68,7 @@ No Last.fm key is required. When configured in Settings, a Last.fm API key is st
 
 ## Project Status
 
-This repository currently publishes source code only. The manual Windows workflow creates an unsigned portable build for testing.
+Windows portable builds are available in Releases. Android and Linux builds can be compiled from source.
 
 ## Privacy
 

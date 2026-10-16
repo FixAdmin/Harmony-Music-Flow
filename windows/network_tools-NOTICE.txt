@@ -1,0 +1,16 @@
+Windows audio extraction uses the following bundled programs:
+
+yt-dlp 2026.08.19
+https://github.com/yt-dlp/yt-dlp/tree/2026.08.19
+The Windows executable includes third-party components and is distributed
+under GPLv3+. See yt-dlp-LICENSE.txt and GPL-3.0.txt.
+https://github.com/yt-dlp/yt-dlp#license
+
+Node.js 24.22.0
+https://github.com/nodejs/node/tree/v24.22.0
+See node-LICENSE.txt for the Node.js and included third-party licenses.
+
+These programs run locally to resolve audio URLs. They are not background
+servers. Executable versions and SHA-256 digests are pinned in
+windows/network_tools.cmake. Runtime code downloads and self-updates are
+disabled; updates are shipped with the application.

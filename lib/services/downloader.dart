@@ -198,7 +198,10 @@ class Downloader extends GetxService {
 
     _dio.download(
         requiredAudioStream.url,
-        options: Options(headers: {"Range": 'bytes=0-$totalBytes'}),
+        options: Options(headers: {
+          ...?requiredAudioStream.headers,
+          if (totalBytes > 0) 'Range': 'bytes=0-${totalBytes - 1}',
+        }),
         filePath, onReceiveProgress: (count, total) {
       if (total <= 0) return;
       songDownloadingProgress.value = ((count / total) * 100).toInt();

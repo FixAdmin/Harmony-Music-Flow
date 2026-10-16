@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:youtube_explode_dart/youtube_explode_dart.dart';
+import 'windows_stream_resolver.dart';
 
 class StreamProvider {
   final bool playable;
@@ -9,11 +10,27 @@ class StreamProvider {
       {required this.playable, this.audioFormats, this.statusMSG = ""});
 
   static Future<StreamProvider> fetch(String videoId) async {
+    if (Platform.isWindows) {
+      try {
+        final formats = await WindowsStreamResolver.fetch(videoId);
+        return StreamProvider(
+            playable: true,
+            statusMSG: 'OK',
+            audioFormats: formats.map(Audio.fromJson).toList());
+      } catch (_) {
+        return StreamProvider(
+            playable: false, statusMSG: 'Unable to load audio from YouTube');
+      }
+    }
     final yt = YoutubeExplode();
-    
+
     try {
       final res = await yt.videos.streamsClient.getManifest(videoId);
       final audio = res.audioOnly;
+      if (audio.isEmpty) {
+        return StreamProvider(
+            playable: false, statusMSG: 'Song has no available audio stream');
+      }
       return StreamProvider(
           playable: true,
           statusMSG: "OK",
@@ -60,6 +77,8 @@ class StreamProvider {
           statusMSG: "Unknown error occurred",
         );
       }
+    } finally {
+      yt.close();
     }
   }
 
@@ -97,6 +116,7 @@ class Audio {
   final int size;
   final double loudnessDb;
   final String url;
+  final Map<String, String>? headers;
   Audio(
       {required this.itag,
       required this.audioCodec,
@@ -104,6 +124,7 @@ class Audio {
       required this.duration,
       required this.loudnessDb,
       required this.url,
+      this.headers,
       required this.size});
 
   Map<String, dynamic> toJson() => {
@@ -112,6 +133,7 @@ class Audio {
         "bitrate": bitrate,
         "loudnessDb": loudnessDb,
         "url": url,
+        if (headers != null) "headers": headers,
         "approxDurationMs": duration,
         "size": size
       };
@@ -125,6 +147,7 @@ class Audio {
       bitrate: json["bitrate"] ?? 0,
       loudnessDb: (json['loudnessDb'])?.toDouble() ?? 0.0,
       url: json['url'],
+      headers: (json['headers'] as Map?)?.cast<String, String>(),
       size: json["size"] ?? 0);
 }
 

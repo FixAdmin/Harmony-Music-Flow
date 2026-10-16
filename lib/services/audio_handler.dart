@@ -315,7 +315,7 @@ class MyAudioHandler extends BaseAudioHandler with GetxServiceMixin {
     _scheduleNextTrackWarmup();
   }
 
-  AudioSource _createAudioSource(MediaItem mediaItem) {
+  AudioSource _createAudioSource(MediaItem mediaItem, Audio audio) {
     final url = mediaItem.extras!['url'] as String;
     if (url.contains('/cache') ||
         (Get.find<SettingsScreenController>().cacheSongs.isTrue &&
@@ -324,6 +324,7 @@ class MyAudioHandler extends BaseAudioHandler with GetxServiceMixin {
       isPlayingUsingLockCachingSource = true;
       return LockCachingAudioSource(
         Uri.parse(url),
+        headers: url.startsWith('http') ? audio.headers : null,
         cacheFile: File("$_cacheDir/cachedSongs/${mediaItem.id}.mp3"),
         tag: mediaItem,
       );
@@ -333,6 +334,7 @@ class MyAudioHandler extends BaseAudioHandler with GetxServiceMixin {
     isPlayingUsingLockCachingSource = false;
     return AudioSource.uri(
       Uri.tryParse(url)!,
+      headers: url.startsWith('http') ? audio.headers : null,
       tag: mediaItem,
     );
   }
@@ -587,7 +589,7 @@ class MyAudioHandler extends BaseAudioHandler with GetxServiceMixin {
           currentSongUrl = currentSong.extras!['url'] = streamInfo.audio!.url;
           playbackState
               .add(playbackState.value.copyWith(queueIndex: currentIndex));
-          await _playList.add(_createAudioSource(currentSong));
+          await _playList.add(_createAudioSource(currentSong, streamInfo.audio!));
           if (!_isCurrentPlaybackRequest(requestId, currentSong.id)) {
             await _playList.clear();
             return;
@@ -679,7 +681,7 @@ class MyAudioHandler extends BaseAudioHandler with GetxServiceMixin {
           if (!_isCurrentPlaybackRequest(requestId, currMed.id)) return;
 
           currentSongUrl = currMed.extras!['url'] = streamInfo.audio!.url;
-          await _playList.add(_createAudioSource(currMed));
+          await _playList.add(_createAudioSource(currMed, streamInfo.audio!));
           if (!_isCurrentPlaybackRequest(requestId, currMed.id)) {
             await _playList.clear();
             return;
@@ -1050,6 +1052,7 @@ class MyAudioHandler extends BaseAudioHandler with GetxServiceMixin {
       if (songsUrlCacheBox.containsKey(songId) && !generateNewUrl) {
         final streamInfoJson = songsUrlCacheBox.get(songId);
         if (streamInfoJson.runtimeType.toString().contains("Map") &&
+            (!Platform.isWindows || streamInfoJson['resolverVersion'] == 1) &&
             !isExpired(url: (streamInfoJson['lowQualityAudio']['url']))) {
           printINFO("Got cached Url ($songId)");
           streamInfo = HMStreamingData.fromJson(streamInfoJson);
@@ -1060,6 +1063,7 @@ class MyAudioHandler extends BaseAudioHandler with GetxServiceMixin {
         final token = RootIsolateToken.instance;
         final streamInfoJson =
             await Isolate.run(() => getStreamInfo(songId, token));
+        if (Platform.isWindows) streamInfoJson['resolverVersion'] = 1;
         streamInfo = HMStreamingData.fromJson(streamInfoJson);
         if (streamInfo.playable) songsUrlCacheBox.put(songId, streamInfoJson);
       }

@@ -600,6 +600,7 @@ class PlayerController extends GetxController
     FlowMode mode = FlowMode.auto,
     FlowStation? station,
     bool useCurrentSongAsSeed = true,
+    bool startNewTrack = true,
   }) async {
     if (!_flowService.isEnabled) {
       isFlowModeOn.value = false;
@@ -673,11 +674,17 @@ class PlayerController extends GetxController
         station: station,
       );
 
-      final seedWasPlaying = seed != null && currentSong.value?.id == seed.id;
+      final seedWasPlaying = seed != null &&
+          currentSong.value != null &&
+          RecommendationMediaJson.sameSong(seed, currentSong.value!);
       final switchImmediately = seed != null && !seedWasPlaying;
+      final startPlannedTrack = startNewTrack && !switchImmediately;
       if (switchImmediately) {
         queueMutated = true;
         await _audioHandler.updateQueue([seed]);
+        if (launchGeneration != _flowLaunchGeneration || isFlowModeOn.isFalse) {
+          return;
+        }
         await _audioHandler.customAction('playByIndex', {'index': 0});
       }
 
@@ -687,9 +694,14 @@ class PlayerController extends GetxController
       }
       var nextItems = _uniqueMediaItems(
         flowItems,
-        excludingItems: seed == null ? const [] : [seed],
+        excludingItems: [
+          if (seed != null) seed,
+          if (startPlannedTrack && previousSong != null) previousSong,
+          if (startPlannedTrack && currentSong.value != null)
+            currentSong.value!,
+        ],
       );
-      if (nextItems.isEmpty && seed != null) {
+      if (nextItems.isEmpty && seed != null && station == null) {
         nextItems = await _fetchAnyFallbackItems(seed);
       }
       if (launchGeneration != _flowLaunchGeneration || isFlowModeOn.isFalse) {
@@ -697,21 +709,25 @@ class PlayerController extends GetxController
       }
 
       final activeSong = currentSong.value;
-      final queue = activeSong == null
-          ? <MediaItem>[if (seed != null) seed, ...nextItems]
-          : FlowQueuePolicy.mergeUpcoming(
-              queue: _effectiveQueue,
-              currentSong: activeSong,
-              planned: nextItems,
-              replaceUpcoming: true,
-              isEligible: _isFlowFallbackEligible,
-            );
+      // Explicit launches replace playback; tuning can keep the current song.
+      final queue = startPlannedTrack
+          ? nextItems.where(_isFlowFallbackEligible).toList()
+          : activeSong == null
+              ? <MediaItem>[if (seed != null) seed, ...nextItems]
+              : FlowQueuePolicy.mergeUpcoming(
+                  queue: _effectiveQueue,
+                  currentSong: activeSong,
+                  planned: nextItems,
+                  replaceUpcoming: true,
+                  isEligible: _isFlowFallbackEligible,
+                );
       final activeIndex = activeSong == null
           ? -1
           : queue.indexWhere((item) => item.id == activeSong.id);
       final hasUpcoming =
           activeIndex < 0 ? queue.isNotEmpty : activeIndex + 1 < queue.length;
-      if (queue.isEmpty || (seed != null && !hasUpcoming)) {
+      if (queue.isEmpty ||
+          (!startPlannedTrack && seed != null && !hasUpcoming)) {
         await rollbackLaunch();
         _showNoNextTrackFound();
         return;
@@ -719,9 +735,12 @@ class PlayerController extends GetxController
 
       queueMutated = true;
       await _audioHandler.updateQueue(queue);
+      if (launchGeneration != _flowLaunchGeneration || isFlowModeOn.isFalse) {
+        return;
+      }
       final currentIsStillQueued = currentSong.value != null &&
           queue.any((item) => item.id == currentSong.value!.id);
-      if (!currentIsStillQueued) {
+      if (startPlannedTrack || !currentIsStillQueued) {
         await _audioHandler.customAction('playByIndex', {'index': 0});
       }
     } catch (_) {
@@ -767,13 +786,17 @@ class PlayerController extends GetxController
   }
 
   Future<void> tuneFlow(FlowMode mode) async {
-    await startFlow(seed: currentSong.value, mode: mode);
+    await startFlow(seed: currentSong.value, mode: mode, startNewTrack: false);
   }
 
   Future<void> applyFlowTuning() async {
     final settings = Get.find<FlowTuner>().current.value;
     await _flowService.updateTuner(settings);
-    await startFlow(seed: currentSong.value, mode: settings.mode);
+    await startFlow(
+      seed: currentSong.value,
+      mode: settings.mode,
+      startNewTrack: false,
+    );
   }
 
   Future<void> moreLikeThis(MediaItem song) async {

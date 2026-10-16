@@ -1,4 +1,7 @@
-# Unreleased - Harmony Music Flow fork
+# 1.13.0-flow.1
+
+* Fixed online tracks failing to load or playing without sound on Windows.
+* Selecting a Flow station or pressing Start Harmony Flow now starts another track instead of only updating the upcoming queue.
 
 * Added Harmony Flow, a continuous queue that mixes library tracks with personalized recommendations.
 * Added generated stations for choosing a narrower musical direction.
