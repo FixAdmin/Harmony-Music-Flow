@@ -22,8 +22,6 @@ class WindowsStreamResolver {
       '--no-remote-components',
       '--js-runtimes',
       'node:${runtime.path}',
-      '--extractor-args',
-      'youtube:player_client=web_embedded',
       '--socket-timeout',
       '15',
       '--retries',

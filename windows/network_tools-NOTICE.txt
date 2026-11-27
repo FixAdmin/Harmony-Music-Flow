@@ -1,7 +1,7 @@
 Windows audio extraction uses the following bundled programs:
 
-yt-dlp 2026.08.19
-https://github.com/yt-dlp/yt-dlp/tree/2026.08.19
+yt-dlp 2026.11.23
+https://github.com/yt-dlp/yt-dlp/tree/2026.11.23
 The Windows executable includes third-party components and is distributed
 under GPLv3+. See yt-dlp-LICENSE.txt and GPL-3.0.txt.
 https://github.com/yt-dlp/yt-dlp#license
